@@ -88,7 +88,11 @@ def render() -> None:
             if isinstance(record.get("evaluation_score"), (int, float))
         ]
         if scores:
-            st.line_chart(scores)
+            st.dataframe(
+    scores,
+    use_container_width=True,
+    hide_index=True
+)
         else:
             st.caption("No evaluation scores recorded yet.")
 
