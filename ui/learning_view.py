@@ -76,7 +76,7 @@ def render() -> None:
         st.markdown('<div class="mai-sidebar-section-label">Feedback distribution</div>', unsafe_allow_html=True)
         if good or bad:
             feedback_df = pd.DataFrame({"Count": [good, bad]}, index=["Positive", "Negative"])
-            st.bar_chart(feedback_df)
+            st.dataframe(feedback_df, use_container_width=True)
         else:
             st.caption("No feedback recorded yet.")
 
