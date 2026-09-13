@@ -1,0 +1,197 @@
+from src.tools import calculator
+from src.conversation import ConversationMemory
+from src.feedback import FeedbackSystem
+from src.planner import create_plan
+from src.evaluator import evaluate_response
+
+
+# ========================================
+# TEST CALCULATOR
+# ========================================
+
+def test_calculator():
+
+    result = calculator("25 * 4")
+
+    assert result == "100"
+
+
+def test_calculator_addition():
+
+    result = calculator("10 + 20")
+
+    assert result == "30"
+
+
+def test_calculator_invalid_input():
+
+    result = calculator(
+        "import os"
+    )
+
+    assert result == (
+        "Invalid mathematical expression."
+    )
+
+
+# ========================================
+# TEST SHORT-TERM MEMORY
+# ========================================
+
+def test_conversation_memory():
+
+    conversation = ConversationMemory(
+        max_messages=3
+    )
+
+    conversation.add_user_message(
+        "Hello"
+    )
+
+    conversation.add_assistant_message(
+        "Hi!"
+    )
+
+    conversation.add_user_message(
+        "How are you?"
+    )
+
+    messages = (
+        conversation.get_messages()
+    )
+
+    assert len(messages) == 3
+
+
+def test_conversation_memory_limit():
+
+    conversation = ConversationMemory(
+        max_messages=2
+    )
+
+    conversation.add_user_message(
+        "Message 1"
+    )
+
+    conversation.add_assistant_message(
+        "Message 2"
+    )
+
+    conversation.add_user_message(
+        "Message 3"
+    )
+
+    messages = (
+        conversation.get_messages()
+    )
+
+    assert len(messages) == 2
+
+    assert messages[0]["content"] == (
+        "Message 2"
+    )
+
+
+# ========================================
+# TEST FEEDBACK SYSTEM
+# ========================================
+
+def test_feedback_good():
+
+    feedback = FeedbackSystem()
+
+    result = feedback.add_feedback(
+        "good"
+    )
+
+    assert result is True
+
+    assert (
+        feedback.get_last_feedback()
+        == "good"
+    )
+
+
+def test_feedback_bad():
+
+    feedback = FeedbackSystem()
+
+    result = feedback.add_feedback(
+        "bad"
+    )
+
+    assert result is True
+
+    assert (
+        feedback.get_last_feedback()
+        == "bad"
+    )
+
+
+def test_feedback_invalid():
+
+    feedback = FeedbackSystem()
+
+    result = feedback.add_feedback(
+        "average"
+    )
+
+    assert result is False
+
+
+def test_feedback_summary():
+
+    feedback = FeedbackSystem()
+
+    feedback.add_feedback("good")
+    feedback.add_feedback("good")
+    feedback.add_feedback("bad")
+
+    summary = (
+        feedback.get_summary()
+    )
+
+    assert summary["good"] == 2
+    assert summary["bad"] == 1
+    assert summary["total"] == 3
+
+
+# ========================================
+# TEST PLANNER
+# ========================================
+
+def test_planner():
+
+    plan = create_plan(
+        "What is Python?"
+    )
+
+    assert plan is not None
+
+    assert len(plan) > 0
+
+
+# ========================================
+# TEST EVALUATOR
+# ========================================
+
+def test_evaluator():
+
+    evaluation = evaluate_response(
+        "Explain Python simply.",
+        "Python is a programming language "
+        "used to build software and AI systems."
+    )
+
+    assert evaluation is not None
+
+    assert len(evaluation) > 0
+
+
+# ========================================
+# TEST SUITE MESSAGE
+# ========================================
+
+print(
+    "\nMemoryAI component tests loaded."
+)
