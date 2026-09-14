@@ -9,8 +9,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12"
-      - key: PORT
-        value: "10000"
       - key: RENDER
         value: "true"
       - key: MEMORYAI_LLM_PROVIDER
