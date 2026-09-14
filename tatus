@@ -1,0 +1,10 @@
+* [33mdd94c9c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Update MemoryAI Streamlit application
+[31m|[m * [33mf97bc6c[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix formatting and clean up README.md
+[31m|[m * [33m4d90f04[m Update README with live link and cleanup
+[31m|[m[31m/[m  
+* [33mda9ce2d[m Remove Altair charts for cloud compatibility
+* [33m94b1ad3[m Fix feedback distribution chart for Streamlit Cloud
+* [33me1e4e8f[m Fix deployment dependencies
+* [33m6f27779[m Add MemoryAI agent with long-term memory and Streamlit UI
+* [33m4bd59df[m first commit
+* [33m9e7ee90[m first commit
