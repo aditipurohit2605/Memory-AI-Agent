@@ -77,12 +77,23 @@ def _run_turn(agent_module, user_message: str) -> dict:
 
 def _run_cloud_turn(user_message: str) -> dict:
     """Generate one fast Gemini response without loading the local memory stack."""
+    stored_memories = get_cloud_memories("aditi")
+    memory_lines = [
+        f"- {item.get('memory', '').strip()}"
+        for item in stored_memories
+        if item.get("memory", "").strip()
+    ]
+    memory_context = "\n".join(memory_lines) or "No stored memories yet."
     messages = [
         {
             "role": "system",
             "content": (
                 "You are MemoryAI, a helpful assistant. Answer clearly and directly. "
-                "Do not mention internal implementation details."
+                "Do not mention internal implementation details.\n\n"
+                "RELEVANT USER MEMORIES:\n"
+                f"{memory_context}\n\n"
+                "Use these memories when relevant. Do not invent memories or claim "
+                "to remember information that is not listed."
             ),
         },
     ]
@@ -106,7 +117,7 @@ def _run_cloud_turn(user_message: str) -> dict:
     )
     return {
         "answer": answer,
-        "memories_used": None,
+        "memories_used": len(memory_lines),
         "new_memory": memory_text,
         "eval_score": None,
     }
