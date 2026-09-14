@@ -14,8 +14,6 @@ invent them. See README_UI_INTEGRATION.md for the smallest backend
 change that would make categories persist and displayable.
 """
 
-import os
-
 import streamlit as st
 
 from ui import components
@@ -27,15 +25,6 @@ def render() -> None:
         "🧠 Long-Term Memory",
         "Everything MemoryAI currently remembers about you.",
     )
-
-    if os.getenv("RENDER"):
-        components.empty_state(
-            "🧠",
-            "Memory storage is unavailable in cloud mode.",
-            "Chat responses are available through Gemini. Connect a hosted Qdrant "
-            "store to enable long-term memory on Render.",
-        )
-        return
 
     agent_module, error = get_backend()
 

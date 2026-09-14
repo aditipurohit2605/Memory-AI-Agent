@@ -7,13 +7,11 @@ get_learning_history(). All numbers shown come directly from
 data/learning_log.json - nothing here is simulated.
 """
 
-import os
-
 import pandas as pd
 import streamlit as st
 
 from ui import components
-from ui.state import get_backend
+from src.learning_log import get_learning_history, get_learning_summary
 
 
 def render() -> None:
@@ -22,23 +20,9 @@ def render() -> None:
         "How MemoryAI is improving from real feedback and self-evaluation.",
     )
 
-    if os.getenv("RENDER"):
-        components.empty_state(
-            "📈",
-            "Learning analytics are unavailable in cloud mode.",
-            "Cloud chat is optimized for fast responses. Connect persistent storage to enable analytics.",
-        )
-        return
-
-    agent_module, error = get_backend()
-
-    if not agent_module:
-        components.backend_unavailable_banner(error)
-        return
-
     try:
-        summary = agent_module.get_learning_summary()
-        history = agent_module.get_learning_history()
+        summary = get_learning_summary()
+        history = get_learning_history()
     except Exception as exc:  # noqa: BLE001
         components.friendly_error("MemoryAI could not load the learning log.")
         with st.expander("Technical details"):

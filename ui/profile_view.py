@@ -6,8 +6,6 @@ get_user_profile(). No profile fields are invented here - if a
 category is empty, it is shown as empty.
 """
 
-import os
-
 import streamlit as st
 
 from ui import components
@@ -29,14 +27,6 @@ def render() -> None:
         "👤 User Profile",
         "A structured profile MemoryAI builds from your long-term memories.",
     )
-
-    if os.getenv("RENDER"):
-        components.empty_state(
-            "👤",
-            "Profile is unavailable in cloud mode.",
-            "Connect a hosted memory store to build and view a persistent profile on Render.",
-        )
-        return
 
     agent_module, error = get_backend()
 

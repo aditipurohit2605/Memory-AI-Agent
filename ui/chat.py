@@ -32,6 +32,7 @@ import os
 import streamlit as st
 
 from src.llm_client import call_llm
+from src.learning_log import add_learning_record
 from ui import components
 from ui.state import cloud_ai_error, get_backend
 
@@ -93,6 +94,13 @@ def _run_cloud_turn(user_message: str) -> dict:
         messages=messages,
     )
     answer = response["message"]["content"].strip()
+    add_learning_record(
+        user_message=user_message,
+        ai_response=answer,
+        feedback=None,
+        learning=None,
+        evaluation_score=None,
+    )
     return {
         "answer": answer,
         "memories_used": None,
@@ -233,7 +241,7 @@ def render() -> None:
                 components.indicator_row(indicators)
 
                 is_latest_assistant_turn = turn_index == len(st.session_state.chat_history) - 1
-                if is_latest_assistant_turn:
+                if is_latest_assistant_turn and agent_module:
                     already_rated = st.session_state.last_feedback_turn == turn_index
                     fcol1, fcol2, _ = st.columns([1, 1, 4])
                     with fcol1:
