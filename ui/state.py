@@ -59,6 +59,19 @@ def save_cloud_memory(user_id: str, text: str) -> None:
         json.dump(data, file, indent=2, ensure_ascii=False)
 
 
+def delete_cloud_memory(user_id: str, memory_id: str) -> None:
+    records = [item for item in get_cloud_memories(user_id) if item.get("id") != memory_id]
+    CLOUD_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with CLOUD_MEMORY_FILE.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    data[user_id] = records
+    with CLOUD_MEMORY_FILE.open("w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+
 def clear_cloud_memories(user_id: str) -> None:
     CLOUD_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     try:

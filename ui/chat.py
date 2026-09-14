@@ -28,13 +28,14 @@ Integration notes (see README_UI_INTEGRATION.md for the full list):
 """
 
 import os
+import re
 
 import streamlit as st
 
 from src.llm_client import call_llm
 from src.learning_log import add_learning_record
 from ui import components
-from ui.state import cloud_ai_error, cloud_mode, get_backend, save_cloud_memory
+from ui.state import cloud_ai_error, cloud_mode, get_backend, get_cloud_memories, save_cloud_memory
 
 
 def _run_turn(agent_module, user_message: str) -> dict:
@@ -93,10 +94,9 @@ def _run_cloud_turn(user_message: str) -> dict:
         messages=messages,
     )
     answer = response["message"]["content"].strip()
-    lowered = user_message.lower()
-    memory_prefixes = ("my name is ", "i prefer ", "i like ", "my goal is ", "i am learning ", "i'm learning ", "i am working on ", "i'm working on ")
-    if lowered.startswith(memory_prefixes):
-        save_cloud_memory("aditi", user_message.strip())
+    memory_text = _extract_cloud_memory(user_message)
+    if memory_text:
+        save_cloud_memory("aditi", memory_text)
     add_learning_record(
         user_message=user_message,
         ai_response=answer,
@@ -107,9 +107,32 @@ def _run_cloud_turn(user_message: str) -> dict:
     return {
         "answer": answer,
         "memories_used": None,
-        "new_memory": None,
+        "new_memory": memory_text,
         "eval_score": None,
     }
+
+
+def _extract_cloud_memory(user_message: str) -> str | None:
+    """Extract common durable first-person facts without another API call."""
+    text = user_message.strip()
+    lowered = text.lower()
+    if lowered in {"hello", "hi", "hey", "thanks", "thank you", "ok", "okay"}:
+        return None
+    patterns = (
+        r"\bmy name is\s+(.+)$",
+        r"\bi prefer\s+(.+)$",
+        r"\bi like\s+(.+)$",
+        r"\bi love\s+(.+)$",
+        r"\bmy goal is\s+(.+)$",
+        r"\bi(?: am|'m) learning\s+(.+)$",
+        r"\bi(?: am|'m) working on\s+(.+)$",
+        r"\bi use\s+(.+)$",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return text.rstrip(".!?")
+    return None
 
 
 def _submit_feedback(agent_module, feedback_value: str):
@@ -174,8 +197,11 @@ def render() -> None:
 
     try:
         history = agent_module.get_learning_history() if agent_module else []
-        memories = agent_module.get_all_memories(agent_module.USER_ID) if agent_module else {}
-        memory_count = len(memories.get("results", [])) if isinstance(memories, dict) else 0
+        if cloud_mode():
+            memory_count = len(get_cloud_memories("aditi"))
+        else:
+            memories = agent_module.get_all_memories(agent_module.USER_ID) if agent_module else {}
+            memory_count = len(memories.get("results", [])) if isinstance(memories, dict) else 0
     except Exception:
         history = []
         memory_count = 0

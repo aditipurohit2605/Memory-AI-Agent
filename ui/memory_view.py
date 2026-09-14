@@ -17,7 +17,7 @@ change that would make categories persist and displayable.
 import streamlit as st
 
 from ui import components
-from ui.state import clear_cloud_memories, cloud_mode, get_backend, get_cloud_memories
+from ui.state import clear_cloud_memories, cloud_mode, delete_cloud_memory, get_backend, get_cloud_memories
 
 
 def render() -> None:
@@ -33,7 +33,14 @@ def render() -> None:
             return
         st.caption(f"{len(results)} memories stored")
         for item in results:
-            components.info_card("Memory", item.get("memory", ""), meta=item.get("created_at", ""))
+            memory_id = item.get("id", "unknown")
+            card_col, action_col = st.columns([6, 1])
+            with card_col:
+                components.info_card("Memory", item.get("memory", ""), meta=item.get("created_at", ""))
+            with action_col:
+                if st.button("🗑️", key=f"cloud_delete_{memory_id}", help="Delete this memory"):
+                    delete_cloud_memory("aditi", memory_id)
+                    st.rerun()
         if st.button("Delete all memories", type="primary"):
             clear_cloud_memories("aditi")
             st.rerun()
