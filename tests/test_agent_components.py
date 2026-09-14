@@ -1,8 +1,34 @@
+from types import SimpleNamespace
+
 from src.tools import calculator
 from src.conversation import ConversationMemory
 from src.feedback import FeedbackSystem
 from src.planner import create_plan
 from src.evaluator import evaluate_response
+from ui.state import check_ollama_status
+
+
+# ========================================
+# TEST OLLAMA MODEL DETECTION
+# ========================================
+
+def test_ollama_status_supports_name_and_model_fields(monkeypatch):
+    class FakeOllama:
+        @staticmethod
+        def list():
+            return {
+                "models": [
+                    {"name": "llama3.2:3b"},
+                    {"model": "mistral:7b"},
+                ]
+            }
+
+    monkeypatch.setitem(__import__("sys").modules, "ollama", SimpleNamespace(list=FakeOllama.list))
+
+    running, available = check_ollama_status("llama3.2:3b")
+
+    assert running is True
+    assert available is True
 
 
 # ========================================

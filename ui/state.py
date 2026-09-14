@@ -67,11 +67,18 @@ def check_ollama_status(model_name: str):
 
         available_names = []
         for item in models:
-            name = item.get("model") if isinstance(item, dict) else getattr(item, "model", None)
-            if name:
-                available_names.append(name)
+            if isinstance(item, dict):
+                available_names.extend(
+                    name for name in [item.get("name"), item.get("model")] if name
+                )
+            else:
+                for attr in ("name", "model"):
+                    name = getattr(item, attr, None)
+                    if name:
+                        available_names.append(name)
 
-        model_available = any(model_name in name for name in available_names)
+        normalized_target = model_name.strip().lower()
+        model_available = any(normalized_target == name.strip().lower() or normalized_target in name.strip().lower() for name in available_names)
         return True, model_available
 
     except Exception:

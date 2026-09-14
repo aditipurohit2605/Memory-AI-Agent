@@ -118,5 +118,21 @@
         "feedback": null,
         "learning": "My name is Aditi",
         "evaluation_score": null
+    },
+    {
+        "timestamp": "2026-09-14T12:24:28",
+        "user_message": "what is my name?",
+        "ai_response": "Your name is Aditi.",
+        "feedback": null,
+        "learning": null,
+        "evaluation_score": 5
+    },
+    {
+        "timestamp": "2026-09-14T12:24:53",
+        "user_message": "What am i learning?",
+        "ai_response": "It appears that you are learning about computer vision, which is a subset of artificial intelligence (AI) that enables machines to interpret and understand visual data from the physical world. Computer vision allows machines to:\n\n* Recognize patterns and objects in images and videos\n* Detect anomalies and abnormalities\n* Extract meaningful insights from visual data\n* Automate tasks such as object detection, tracking, and classification\n\nComputer vision has numerous applications in various industries, including:\n\n* Healthcare: medical image analysis, disease diagnosis, and patient monitoring\n* Retail: product recognition, inventory management, and customer tracking\n* Autonomous vehicles: object detection, tracking, and navigation\n* Robotics: object recognition, grasping, and manipulation\n* Security: surveillance, anomaly detection, and facial recognition\n\nThe main purpose of computer vision is to enable machines to understand and interact with the physical world, making it a transformative field of artificial intelligence.",
+        "feedback": null,
+        "learning": null,
+        "evaluation_score": 4.67
     }
 ]
