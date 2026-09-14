@@ -1,10 +1,12 @@
 """
-ui/learning_view.py
+Learning / analytics dashboard.
 
-Learning / analytics dashboard, built entirely from
-src.learning_log's existing get_learning_summary() and
-get_learning_history(). All numbers shown come directly from
-data/learning_log.json - nothing here is simulated.
+Uses the existing learning log data from:
+src.learning_log.get_learning_summary()
+src.learning_log.get_learning_history()
+
+All numbers shown come directly from data/learning_log.json.
+Nothing here is simulated.
 """
 
 import pandas as pd
@@ -30,9 +32,13 @@ def render() -> None:
         summary = agent_module.get_learning_summary()
         history = agent_module.get_learning_history()
     except Exception as exc:  # noqa: BLE001
-        components.friendly_error("MemoryAI could not load the learning log.")
+        components.friendly_error(
+            "MemoryAI could not load the learning log."
+        )
+
         with st.expander("Technical details"):
             st.code(str(exc), language="text")
+
         return
 
     if not history:
@@ -49,22 +55,45 @@ def render() -> None:
     # ---------------------------------------------------------------
 
     average = summary.get("average_evaluation_score")
-    average_display = f"{round(average, 2)}/5" if average is not None else "N/A"
+
+    if average is not None:
+        average_display = f"{round(average, 2)}/5"
+    else:
+        average_display = "N/A"
 
     m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        components.metric_card(summary.get("total_interactions", 0), "Total Interactions")
-    with m2:
-        components.metric_card(summary.get("positive_feedback", 0), "👍 Positive")
-    with m3:
-        components.metric_card(summary.get("negative_feedback", 0), "👎 Negative")
-    with m4:
-        components.metric_card(average_display, "Avg. Evaluation Score")
 
-    st.markdown('<hr class="mai-divider">', unsafe_allow_html=True)
+    with m1:
+        components.metric_card(
+            summary.get("total_interactions", 0),
+            "Total Interactions",
+        )
+
+    with m2:
+        components.metric_card(
+            summary.get("positive_feedback", 0),
+            "👍 Positive",
+        )
+
+    with m3:
+        components.metric_card(
+            summary.get("negative_feedback", 0),
+            "👎 Negative",
+        )
+
+    with m4:
+        components.metric_card(
+            average_display,
+            "Avg. Evaluation Score",
+        )
+
+    st.markdown(
+        '<hr class="mai-divider">',
+        unsafe_allow_html=True,
+    )
 
     # ---------------------------------------------------------------
-    # Charts (only rendered when there's real data to support them)
+    # Analytics
     # ---------------------------------------------------------------
 
     good = summary.get("positive_feedback", 0)
@@ -72,59 +101,126 @@ def render() -> None:
 
     chart_col1, chart_col2 = st.columns(2)
 
+    # ---------------------------------------------------------------
+    # Feedback distribution
+    # ---------------------------------------------------------------
+
     with chart_col1:
-        st.markdown('<div class="mai-sidebar-section-label">Feedback distribution</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="mai-sidebar-section-label">'
+            "Feedback distribution"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
         if good or bad:
-            feedback_df = pd.DataFrame({"Count": [good, bad]}, index=["Positive", "Negative"])
-            st.dataframe(feedback_df, use_container_width=True)
+            feedback_df = pd.DataFrame(
+                {
+                    "Feedback": ["Positive", "Negative"],
+                    "Count": [good, bad],
+                }
+            )
+
+            st.dataframe(
+                feedback_df,
+                use_container_width=True,
+                hide_index=True,
+            )
         else:
             st.caption("No feedback recorded yet.")
 
+    # ---------------------------------------------------------------
+    # Evaluation scores
+    # ---------------------------------------------------------------
+
     with chart_col2:
-        st.markdown('<div class="mai-sidebar-section-label">Evaluation score over time</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="mai-sidebar-section-label">'
+            "Evaluation score over time"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
         scores = [
             record.get("evaluation_score")
             for record in history
-            if isinstance(record.get("evaluation_score"), (int, float))
+            if isinstance(
+                record.get("evaluation_score"),
+                (int, float),
+            )
         ]
-        if scores:
-            st.dataframe(
-    scores,
-    use_container_width=True,
-    hide_index=True
-)
-        else:
-            st.caption("No evaluation scores recorded yet.")
 
-    st.markdown('<hr class="mai-divider">', unsafe_allow_html=True)
+        if scores:
+            scores_df = pd.DataFrame(
+                {
+                    "Evaluation Score": scores,
+                }
+            )
+
+            st.dataframe(
+                scores_df,
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.caption(
+                "No evaluation scores recorded yet."
+            )
+
+    st.markdown(
+        '<hr class="mai-divider">',
+        unsafe_allow_html=True,
+    )
 
     # ---------------------------------------------------------------
     # Recent learning
     # ---------------------------------------------------------------
 
-    st.markdown('<div class="mai-sidebar-section-label">Recent learning</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="mai-sidebar-section-label">'
+        "Recent learning"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    learned_records = [record for record in reversed(history) if record.get("learning")]
+    learned_records = [
+        record
+        for record in reversed(history)
+        if record.get("learning")
+    ]
 
     if not learned_records:
-        st.caption("No learning has been extracted yet. Give feedback to help MemoryAI learn.")
+        st.caption(
+            "No learning has been extracted yet. "
+            "Give feedback to help MemoryAI learn."
+        )
     else:
         for record in learned_records[:10]:
-            st.markdown(f"✓ {record['learning']}")
+            learning_text = str(record.get("learning", "")).strip()
 
-    st.markdown('<hr class="mai-divider">', unsafe_allow_html=True)
+            if learning_text:
+                st.markdown(f"✓ {learning_text}")
+
+    st.markdown(
+        '<hr class="mai-divider">',
+        unsafe_allow_html=True,
+    )
 
     # ---------------------------------------------------------------
-    # Full log (detail view)
+    # Full interaction log
     # ---------------------------------------------------------------
 
-    with st.expander(f"Full interaction log ({len(history)} records)"):
+    with st.expander(
+        f"Full interaction log ({len(history)} records)"
+    ):
         for record in reversed(history):
             components.info_card(
                 record.get("timestamp", ""),
                 record.get("user_message", ""),
                 meta=(
-                    f"Feedback: {record.get('feedback') or '—'} · "
-                    f"Score: {record.get('evaluation_score', '—')}/5"
+                    f"Feedback: "
+                    f"{record.get('feedback') or '—'} · "
+                    f"Score: "
+                    f"{record.get('evaluation_score', '—')}/5"
                 ),
             )
