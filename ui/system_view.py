@@ -6,6 +6,8 @@ Status checks are read-only probes against the already-imported
 backend (see ui/state.py) - nothing here fakes a green light.
 """
 
+import os
+
 import streamlit as st
 
 from ui import components
@@ -27,12 +29,19 @@ STACK = [
 
 
 def render() -> None:
-    agent_module, error = get_backend()
-
     components.page_header(
         "⚙️ System",
         "Architecture and live status of MemoryAI's components.",
     )
+
+    if os.getenv("RENDER"):
+        components.info_card("AI provider", "Gemini cloud API")
+        components.info_card("Memory backend", "Not connected in this deployment")
+        components.status_row("Gemini cloud API", ok=True)
+        components.status_row("Persistent memory", ok=False, unknown=True)
+        return
+
+    agent_module, error = get_backend()
 
     st.markdown('<div class="mai-sidebar-section-label">Technology stack</div>', unsafe_allow_html=True)
 
