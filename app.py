@@ -29,8 +29,21 @@ MODEL_NAME = "llama3.2:3b"
 
 
 def configure_runtime() -> None:
-    """Load deployment-only connection settings before backend imports."""
-    ollama_host = st.secrets.get("OLLAMA_HOST")
+    """Load deployment-only connection settings before backend imports.
+
+    Streamlit raises StreamlitSecretNotFoundError when no secrets.toml exists,
+    which is normal in Render when environment variables are used instead.
+    """
+    ollama_host = os.getenv("OLLAMA_HOST")
+
+    try:
+        secret_host = st.secrets.get("OLLAMA_HOST")
+    except Exception:
+        secret_host = None
+
+    if secret_host:
+        ollama_host = str(secret_host).rstrip("/")
+
     if ollama_host:
         os.environ["OLLAMA_HOST"] = str(ollama_host).rstrip("/")
 
