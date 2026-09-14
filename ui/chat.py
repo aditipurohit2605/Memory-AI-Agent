@@ -27,8 +27,11 @@ Integration notes (see README_UI_INTEGRATION.md for the full list):
   for the smallest possible backend change that would expose it.
 """
 
+import os
+
 import streamlit as st
 
+from src.llm_client import call_llm
 from ui import components
 from ui.state import cloud_ai_error, get_backend
 
@@ -67,6 +70,34 @@ def _run_turn(agent_module, user_message: str) -> dict:
         "memories_used": memories_used,
         "eval_score": eval_score,
         "new_memory": new_memory,
+    }
+
+
+def _run_cloud_turn(user_message: str) -> dict:
+    """Generate one fast Gemini response without loading the local memory stack."""
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are MemoryAI, a helpful assistant. Answer clearly and directly. "
+                "Do not mention internal implementation details."
+            ),
+        },
+    ]
+    for turn in st.session_state.chat_history:
+        messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": user_message})
+
+    response = call_llm(
+        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        messages=messages,
+    )
+    answer = response["message"]["content"].strip()
+    return {
+        "answer": answer,
+        "memories_used": None,
+        "new_memory": None,
+        "eval_score": None,
     }
 
 
@@ -126,7 +157,7 @@ def render() -> None:
 
     agent_module = None
     error = cloud_ai_error()
-    if st.session_state.chat_history or st.session_state.pending_prompt:
+    if (st.session_state.chat_history or st.session_state.pending_prompt) and not os.getenv("RENDER"):
         if not error:
             agent_module, error = get_backend()
 
@@ -167,7 +198,8 @@ def render() -> None:
     header_col, clear_col = st.columns([5, 1])
     with clear_col:
         if st.button("Clear conversation", use_container_width=True):
-            agent_module.conversation.clear()
+            if agent_module:
+                agent_module.conversation.clear()
             st.session_state.chat_history = []
             st.session_state.last_feedback_turn = -1
             st.session_state.feedback_message = None
@@ -238,9 +270,9 @@ def render() -> None:
                 }
             )
             st.rerun()
-        if not agent_module:
+        if not agent_module and not os.getenv("RENDER"):
             agent_module, error = get_backend()
-        if not agent_module:
+        if not agent_module and not os.getenv("RENDER"):
             st.session_state.chat_history.append(
                 {
                     "role": "assistant",
@@ -255,7 +287,11 @@ def render() -> None:
 
         with st.spinner("MemoryAI is thinking..."):
             try:
-                result = _run_turn(agent_module, user_message)
+                result = (
+                    _run_cloud_turn(user_message)
+                    if os.getenv("RENDER")
+                    else _run_turn(agent_module, user_message)
+                )
                 st.session_state.chat_history.append(
                     {
                         "role": "assistant",
