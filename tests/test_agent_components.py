@@ -223,7 +223,7 @@ def test_build_memory_config_uses_gemini_for_cloud(monkeypatch):
     config = build_memory_config()
 
     assert config["llm"]["provider"] == "gemini"
-    assert config["llm"]["config"]["model"] == "gemini-2.0-flash"
+    assert config["llm"]["config"]["model"] == "gemini-3.6-flash"
     assert config["llm"]["config"]["api_key"] == "cloud-key"
 
 

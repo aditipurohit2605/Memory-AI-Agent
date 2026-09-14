@@ -89,7 +89,7 @@ def _run_cloud_turn(user_message: str) -> dict:
     messages.append({"role": "user", "content": user_message})
 
     response = call_llm(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
         messages=messages,
     )
     answer = response["message"]["content"].strip()

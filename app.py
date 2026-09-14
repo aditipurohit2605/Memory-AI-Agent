@@ -51,7 +51,7 @@ def configure_runtime() -> None:
 
     if os.getenv("RENDER"):
         os.environ.setdefault("MEMORYAI_LLM_PROVIDER", "gemini")
-        os.environ.setdefault("GEMINI_MODEL", "gemini-2.0-flash")
+        os.environ.setdefault("GEMINI_MODEL", "gemini-3.6-flash")
 
 
 def render_sidebar() -> None:

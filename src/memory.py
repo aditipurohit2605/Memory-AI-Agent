@@ -30,7 +30,7 @@ def build_memory_config():
     if is_cloud and google_key:
         llm_provider = "gemini"
         llm_config = {
-            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "model": os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
             "temperature": 0.2,
             "max_tokens": 1000,
             "api_key": google_key,
