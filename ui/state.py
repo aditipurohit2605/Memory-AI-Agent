@@ -20,7 +20,19 @@ fails (e.g. Ollama isn't running yet), the failure is NOT cached,
 so the user can fix the issue and retry without restarting Streamlit.
 """
 
+import os
+
 import streamlit as st
+
+
+def cloud_ai_error() -> str | None:
+    """Return a fast configuration error for cloud deployments."""
+    if os.getenv("RENDER") and not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+        return (
+            "Cloud AI is not configured on Render. Add GEMINI_API_KEY or "
+            "GOOGLE_API_KEY in the Render environment variables, then redeploy."
+        )
+    return None
 
 
 @st.cache_resource(show_spinner=False)

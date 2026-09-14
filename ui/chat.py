@@ -30,7 +30,7 @@ Integration notes (see README_UI_INTEGRATION.md for the full list):
 import streamlit as st
 
 from ui import components
-from ui.state import get_backend
+from ui.state import cloud_ai_error, get_backend
 
 
 def _run_turn(agent_module, user_message: str) -> dict:
@@ -125,9 +125,10 @@ def render() -> None:
     )
 
     agent_module = None
-    error = None
+    error = cloud_ai_error()
     if st.session_state.chat_history or st.session_state.pending_prompt:
-        agent_module, error = get_backend()
+        if not error:
+            agent_module, error = get_backend()
 
     try:
         history = agent_module.get_learning_history() if agent_module else []
@@ -229,6 +230,14 @@ def render() -> None:
         st.session_state.pending_prompt = None
 
     if user_message:
+        if error:
+            st.session_state.chat_history.append(
+                {
+                    "role": "assistant",
+                    "content": f"⚠️ {error}",
+                }
+            )
+            st.rerun()
         if not agent_module:
             agent_module, error = get_backend()
         if not agent_module:
