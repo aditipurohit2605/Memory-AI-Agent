@@ -34,6 +34,8 @@ def configure_runtime() -> None:
     Streamlit raises StreamlitSecretNotFoundError when no secrets.toml exists,
     which is normal in Render when environment variables are used instead.
     """
+    os.environ.setdefault("PORT", "8501")
+
     ollama_host = os.getenv("OLLAMA_HOST")
 
     try:
@@ -46,6 +48,10 @@ def configure_runtime() -> None:
 
     if ollama_host:
         os.environ["OLLAMA_HOST"] = str(ollama_host).rstrip("/")
+
+    if os.getenv("RENDER"):
+        os.environ.setdefault("MEMORYAI_LLM_PROVIDER", "gemini")
+        os.environ.setdefault("GEMINI_MODEL", "gemini-2.0-flash")
 
 
 def render_sidebar() -> None:

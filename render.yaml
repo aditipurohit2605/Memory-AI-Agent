@@ -9,13 +9,25 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12"
+      - key: PORT
+        value: "10000"
+      - key: RENDER
+        value: "true"
       - key: MEMORYAI_LLM_PROVIDER
         value: gemini
       - key: GEMINI_MODEL
         value: gemini-2.0-flash
+      - key: GOOGLE_API_KEY
+        value: ""
+      - key: GEMINI_API_KEY
+        value: ""
       - key: EMBEDDER_MODEL
         value: sentence-transformers/all-MiniLM-L6-v2
       - key: MEM0_COLLECTION
         value: memory-ai-agent
+      - key: QDRANT_URL
+        value: ""
+      - key: QDRANT_API_KEY
+        value: ""
       - key: QDRANT_PATH
         value: ./qdrant_data
