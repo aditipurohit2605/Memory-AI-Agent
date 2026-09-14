@@ -2,7 +2,7 @@
 import json
 import re
 
-from ollama import chat
+from src.llm_client import call_llm
 
 from src.memory import get_all_memories
 
@@ -262,7 +262,7 @@ Return exactly this structure:
 
     try:
 
-        response = chat(
+        response = call_llm(
             model=MODEL,
             messages=[
                 {

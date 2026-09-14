@@ -5,6 +5,7 @@ from src.conversation import ConversationMemory
 from src.feedback import FeedbackSystem
 from src.planner import create_plan
 from src.evaluator import evaluate_response
+from src.memory import build_memory_config
 from ui.state import check_ollama_status
 
 
@@ -212,6 +213,31 @@ def test_evaluator():
     assert evaluation is not None
 
     assert len(evaluation) > 0
+
+
+def test_build_memory_config_uses_gemini_for_cloud(monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY", "cloud-key")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+
+    config = build_memory_config()
+
+    assert config["llm"]["provider"] == "gemini"
+    assert config["llm"]["config"]["model"] == "gemini-2.0-flash"
+    assert config["llm"]["config"]["api_key"] == "cloud-key"
+
+
+def test_build_memory_config_defaults_to_local_ollama(monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("QDRANT_URL", raising=False)
+    monkeypatch.delenv("QDRANT_API_KEY", raising=False)
+
+    config = build_memory_config()
+
+    assert config["llm"]["provider"] == "ollama"
+    assert config["vector_store"]["provider"] == "qdrant"
+    assert config["vector_store"]["config"]["path"] == "./qdrant_data"
 
 
 # ========================================

@@ -1,4 +1,4 @@
-from ollama import chat
+from src.llm_client import call_llm
 
 
 MODEL = "llama3.2:3b"
@@ -67,7 +67,7 @@ Do not explain your reasoning.
 
     try:
 
-        response = chat(
+        response = call_llm(
             model=MODEL,
             messages=[
                 {

@@ -1,4 +1,6 @@
 
+import os
+
 from dotenv import load_dotenv
 from mem0 import Memory
 
@@ -8,6 +10,69 @@ from mem0 import Memory
 # --------------------------------
 
 load_dotenv()
+
+
+def build_memory_config():
+    """Return the correct Mem0 configuration for local or cloud deployments."""
+    google_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    qdrant_url = os.getenv("QDRANT_URL")
+    qdrant_api_key = os.getenv("QDRANT_API_KEY")
+    provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+
+    is_cloud = bool(
+        os.getenv("RENDER")
+        or google_key
+        or qdrant_url
+        or qdrant_api_key
+        or provider in {"gemini", "google", "google-genai", "cloud"}
+    )
+
+    if is_cloud and google_key:
+        llm_provider = "gemini"
+        llm_config = {
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "temperature": 0.2,
+            "max_tokens": 1000,
+            "api_key": google_key,
+        }
+    else:
+        llm_provider = "ollama"
+        llm_config = {
+            "model": os.getenv("OLLAMA_MODEL", "llama3.2:3b"),
+            "temperature": 0.2,
+            "max_tokens": 1000,
+            "ollama_base_url": os.getenv("OLLAMA_HOST") or os.getenv("OLLAMA_BASE_URL"),
+        }
+
+    vector_cfg = {
+        "collection_name": os.getenv("MEM0_COLLECTION", "memory-ai-agent"),
+        "embedding_model_dims": 384,
+    }
+    if qdrant_url and qdrant_api_key:
+        vector_cfg.update({
+            "url": qdrant_url,
+            "api_key": qdrant_api_key,
+            "https": str(qdrant_url).startswith("https://"),
+        })
+    else:
+        vector_cfg["path"] = os.getenv("QDRANT_PATH", "./qdrant_data")
+
+    return {
+        "llm": {
+            "provider": llm_provider,
+            "config": llm_config,
+        },
+        "embedder": {
+            "provider": "huggingface",
+            "config": {
+                "model": os.getenv("EMBEDDER_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+            },
+        },
+        "vector_store": {
+            "provider": "qdrant",
+            "config": vector_cfg,
+        },
+    }
 
 
 # --------------------------------
@@ -21,33 +86,7 @@ print("Starting Memory AI Agent...")
 # MEM0 CONFIGURATION
 # --------------------------------
 
-config = {
-
-    "llm": {
-        "provider": "ollama",
-        "config": {
-            "model": "llama3.2:3b",
-            "temperature": 0.2,
-            "max_tokens": 1000
-        }
-    },
-
-    "embedder": {
-        "provider": "huggingface",
-        "config": {
-            "model": "sentence-transformers/all-MiniLM-L6-v2"
-        }
-    },
-
-    "vector_store": {
-        "provider": "qdrant",
-        "config": {
-            "collection_name": "memory-ai-agent",
-            "embedding_model_dims": 384,
-            "path": "./qdrant_data"
-        }
-    }
-}
+config = build_memory_config()
 
 
 # --------------------------------

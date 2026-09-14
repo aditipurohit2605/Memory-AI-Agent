@@ -1,5 +1,5 @@
 
-from ollama import chat
+from src.llm_client import call_llm
 
 
 MODEL = "llama3.2:3b"
@@ -112,7 +112,7 @@ Return ONLY the final decision or numbered plan.
 
     try:
 
-        response = chat(
+        response = call_llm(
             model=MODEL,
             messages=[
                 {

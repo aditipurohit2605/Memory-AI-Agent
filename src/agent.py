@@ -10,7 +10,7 @@ os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 
 logging.getLogger().setLevel(logging.ERROR)
 
-from ollama import chat
+from src.llm_client import call_llm
 
 from src.memory import (
     memory,
@@ -201,7 +201,7 @@ Rules:
 
     try:
 
-        response = chat(
+        response = call_llm(
             model=MODEL,
             messages=[
                 {
@@ -402,7 +402,7 @@ Instructions:
     # FIRST AI RESPONSE
     # -----------------------------------------------------
 
-    response = chat(
+    response = call_llm(
         model=MODEL,
         messages=messages,
         tools=[
@@ -475,7 +475,7 @@ Instructions:
                 }
             )
 
-        final_response = chat(
+        final_response = call_llm(
             model=MODEL,
             messages=messages
         )
