@@ -119,13 +119,14 @@ def _submit_feedback(agent_module, feedback_value: str):
 
 
 def render() -> None:
+    components.page_header(
+        "💬 Chat",
+        "Ask MemoryAI anything. It remembers what matters and learns from your feedback.",
+    )
+
     agent_module, error = get_backend()
 
     if not agent_module:
-        components.page_header(
-            "💬 Chat",
-            "Ask MemoryAI anything. It remembers what matters and learns from your feedback.",
-        )
         components.backend_unavailable_banner(error)
         return
 

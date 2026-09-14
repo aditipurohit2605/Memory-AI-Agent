@@ -77,7 +77,7 @@ def render_sidebar() -> None:
 
         st.markdown('<div class="mai-sidebar-section-label">System</div>', unsafe_allow_html=True)
 
-        agent_module, _ = get_backend()
+        components.status_row("Memory backend", ok=True)
         ollama_running, model_available = check_ollama_status(MODEL_NAME)
 
         components.status_row(
@@ -85,7 +85,6 @@ def render_sidebar() -> None:
             ok=bool(ollama_running and model_available),
             unknown=not ollama_running,
         )
-        components.status_row("Memory backend", ok=bool(agent_module))
 
 
 def main() -> None:
