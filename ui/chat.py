@@ -124,15 +124,14 @@ def render() -> None:
         "Ask MemoryAI anything. It remembers what matters and learns from your feedback.",
     )
 
-    agent_module, error = get_backend()
-
-    if not agent_module:
-        components.backend_unavailable_banner(error)
-        return
+    agent_module = None
+    error = None
+    if st.session_state.chat_history or st.session_state.pending_prompt:
+        agent_module, error = get_backend()
 
     try:
-        history = agent_module.get_learning_history()
-        memories = agent_module.get_all_memories(agent_module.USER_ID)
+        history = agent_module.get_learning_history() if agent_module else []
+        memories = agent_module.get_all_memories(agent_module.USER_ID) if agent_module else {}
         memory_count = len(memories.get("results", [])) if isinstance(memories, dict) else 0
     except Exception:
         history = []
@@ -145,7 +144,7 @@ def render() -> None:
         [
             (memory_count, "memories"),
             (len(history), "learning signals"),
-            ("LOCAL", "privacy mode"),
+            ("READY", "chat mode"),
         ],
     )
 
@@ -230,6 +229,17 @@ def render() -> None:
         st.session_state.pending_prompt = None
 
     if user_message:
+        if not agent_module:
+            agent_module, error = get_backend()
+        if not agent_module:
+            st.session_state.chat_history.append(
+                {
+                    "role": "assistant",
+                    "content": f"MemoryAI is still starting. {error or 'Please try again in a moment.'}",
+                }
+            )
+            st.rerun()
+
         st.session_state.chat_history.append({"role": "user", "content": user_message})
         st.session_state.last_feedback_turn = -1
         st.session_state.feedback_message = None
