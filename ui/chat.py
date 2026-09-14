@@ -264,9 +264,8 @@ def render() -> None:
                     {
                         "role": "assistant",
                         "content": (
-                            "⚠️ MemoryAI ran into a problem generating a response. "
-                            "Please make sure Ollama is running and Llama 3.2 3B is "
-                            "available, then try again."
+                            "⚠️ MemoryAI could not generate a response. "
+                            f"{exc}"
                         ),
                     }
                 )

@@ -154,6 +154,13 @@ def _ollama_call(model: str, messages: List[Dict[str, str]], tools: Optional[Lis
 def call_llm(model: str, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> Dict[str, Any]:
     """Route requests to the cloud provider when configured, otherwise use local Ollama."""
     provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+
+    if os.getenv("RENDER") and not _get_gemini_api_key():
+        raise RuntimeError(
+            "Cloud AI is not configured. Add GEMINI_API_KEY or GOOGLE_API_KEY "
+            "in the Render environment variables, then redeploy."
+        )
+
     if provider in {"", "local", "ollama"} and not _is_cloud_mode():
         return _ollama_call(model, messages, tools=tools, **kwargs)
 
