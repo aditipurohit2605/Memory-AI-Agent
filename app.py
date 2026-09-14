@@ -8,6 +8,8 @@ the project. Nothing under src/ is imported except through the
 public functions src/agent.py already exposes (see ui/state.py).
 """
 
+import os
+
 import streamlit as st
 
 from ui import chat, components, learning_view, memory_view, profile_view, system_view
@@ -24,6 +26,13 @@ PAGES = {
 }
 
 MODEL_NAME = "llama3.2:3b"
+
+
+def configure_runtime() -> None:
+    """Load deployment-only connection settings before backend imports."""
+    ollama_host = st.secrets.get("OLLAMA_HOST")
+    if ollama_host:
+        os.environ["OLLAMA_HOST"] = str(ollama_host).rstrip("/")
 
 
 def render_sidebar() -> None:
@@ -61,6 +70,8 @@ def render_sidebar() -> None:
 
 
 def main() -> None:
+    configure_runtime()
+
     st.set_page_config(
         page_title="MemoryAI",
         page_icon="🧠",
