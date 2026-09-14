@@ -9,7 +9,7 @@ backend (see ui/state.py) - nothing here fakes a green light.
 import streamlit as st
 
 from ui import components
-from ui.state import check_ollama_status, get_backend
+from ui.state import check_ollama_status, cloud_mode, get_backend
 
 
 MODEL_NAME = "llama3.2:3b"
@@ -31,6 +31,14 @@ def render() -> None:
         "⚙️ System",
         "Architecture and live status of MemoryAI's components.",
     )
+
+    if cloud_mode():
+        components.info_card("AI provider", "Gemini cloud API")
+        components.info_card("Memory backend", "Lightweight cloud memory store")
+        components.status_row("Gemini cloud API", ok=True)
+        components.status_row("Cloud memory", ok=True)
+        st.caption("Cloud mode uses Gemini for responses and a lightweight memory store for this deployment.")
+        return
 
     agent_module, error = get_backend()
 

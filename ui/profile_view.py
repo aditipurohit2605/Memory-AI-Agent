@@ -9,7 +9,7 @@ category is empty, it is shown as empty.
 import streamlit as st
 
 from ui import components
-from ui.state import get_backend
+from ui.state import cloud_mode, get_backend, get_cloud_memories
 
 
 SECTIONS = [
@@ -27,6 +27,15 @@ def render() -> None:
         "👤 User Profile",
         "A structured profile MemoryAI builds from your long-term memories.",
     )
+
+    if cloud_mode():
+        memories = [item.get("memory", "") for item in get_cloud_memories("aditi")]
+        if not memories:
+            components.empty_state("👤", "Your profile is still being built.", "Share your goals and preferences in Chat.")
+            return
+        components.section_label("Known about you")
+        components.chip_group(memories)
+        return
 
     agent_module, error = get_backend()
 

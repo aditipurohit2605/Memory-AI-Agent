@@ -21,8 +21,54 @@ so the user can fix the issue and retry without restarting Streamlit.
 """
 
 import os
+import json
+from pathlib import Path
+from datetime import datetime
 
 import streamlit as st
+
+
+CLOUD_MEMORY_FILE = Path(__file__).resolve().parent.parent / "data" / "cloud_memories.json"
+
+
+def cloud_mode() -> bool:
+    return bool(os.getenv("RENDER"))
+
+
+def get_cloud_memories(user_id: str) -> list[dict]:
+    try:
+        with CLOUD_MEMORY_FILE.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+        return data.get(user_id, []) if isinstance(data, dict) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def save_cloud_memory(user_id: str, text: str) -> None:
+    CLOUD_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with CLOUD_MEMORY_FILE.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    records = data.setdefault(user_id, [])
+    if any(item.get("memory", "").lower() == text.lower() for item in records):
+        return
+    records.append({"id": f"cloud-{len(records) + 1}", "memory": text, "created_at": datetime.now().isoformat(timespec="seconds")})
+    with CLOUD_MEMORY_FILE.open("w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+
+def clear_cloud_memories(user_id: str) -> None:
+    CLOUD_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with CLOUD_MEMORY_FILE.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    data[user_id] = []
+    with CLOUD_MEMORY_FILE.open("w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
 
 
 def cloud_ai_error() -> str | None:

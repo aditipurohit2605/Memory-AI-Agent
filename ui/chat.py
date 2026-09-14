@@ -34,7 +34,7 @@ import streamlit as st
 from src.llm_client import call_llm
 from src.learning_log import add_learning_record
 from ui import components
-from ui.state import cloud_ai_error, get_backend
+from ui.state import cloud_ai_error, cloud_mode, get_backend, save_cloud_memory
 
 
 def _run_turn(agent_module, user_message: str) -> dict:
@@ -87,13 +87,16 @@ def _run_cloud_turn(user_message: str) -> dict:
     ]
     for turn in st.session_state.chat_history:
         messages.append({"role": turn["role"], "content": turn["content"]})
-    messages.append({"role": "user", "content": user_message})
 
     response = call_llm(
         model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
         messages=messages,
     )
     answer = response["message"]["content"].strip()
+    lowered = user_message.lower()
+    memory_prefixes = ("my name is ", "i prefer ", "i like ", "my goal is ", "i am learning ", "i'm learning ", "i am working on ", "i'm working on ")
+    if lowered.startswith(memory_prefixes):
+        save_cloud_memory("aditi", user_message.strip())
     add_learning_record(
         user_message=user_message,
         ai_response=answer,
@@ -297,7 +300,7 @@ def render() -> None:
             try:
                 result = (
                     _run_cloud_turn(user_message)
-                    if os.getenv("RENDER")
+                    if cloud_mode()
                     else _run_turn(agent_module, user_message)
                 )
                 st.session_state.chat_history.append(

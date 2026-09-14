@@ -17,7 +17,7 @@ change that would make categories persist and displayable.
 import streamlit as st
 
 from ui import components
-from ui.state import get_backend
+from ui.state import clear_cloud_memories, cloud_mode, get_backend, get_cloud_memories
 
 
 def render() -> None:
@@ -25,6 +25,19 @@ def render() -> None:
         "🧠 Long-Term Memory",
         "Everything MemoryAI currently remembers about you.",
     )
+
+    if cloud_mode():
+        results = get_cloud_memories("aditi")
+        if not results:
+            components.empty_state("🧠", "No memories yet.", "Tell MemoryAI about your preferences, goals, or projects in Chat.")
+            return
+        st.caption(f"{len(results)} memories stored")
+        for item in results:
+            components.info_card("Memory", item.get("memory", ""), meta=item.get("created_at", ""))
+        if st.button("Delete all memories", type="primary"):
+            clear_cloud_memories("aditi")
+            st.rerun()
+        return
 
     agent_module, error = get_backend()
 
