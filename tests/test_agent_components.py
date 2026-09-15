@@ -261,6 +261,51 @@ def test_call_llm_uses_local_ollama_when_render_has_no_cloud_key(monkeypatch):
     assert result["message"]["content"] == "fallback response"
 
 
+def test_call_llm_falls_back_to_ollama_on_gemini_503(monkeypatch):
+    monkeypatch.setenv("MEMORYAI_LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    observed = {"gemini_calls": 0, "ollama_calls": 0}
+
+    def fake_gemini_call(model, messages, tools=None, **kwargs):
+        observed["gemini_calls"] += 1
+        raise RuntimeError("503 UNAVAILABLE: This model is currently experiencing high demand.")
+
+    def fake_ollama_call(model, messages, tools=None, **kwargs):
+        observed["ollama_calls"] += 1
+        return {"message": {"content": "local fallback"}}
+
+    monkeypatch.setattr("src.llm_client._gemini_call", fake_gemini_call)
+    monkeypatch.setattr("src.llm_client._ollama_call", fake_ollama_call)
+
+    result = call_llm("gemini-3.6-flash", [{"role": "user", "content": "Hi"}])
+
+    assert observed["gemini_calls"] >= 1
+    assert observed["ollama_calls"] >= 1
+    assert result["message"]["content"] == "local fallback"
+
+
+def test_call_llm_returns_fallback_when_all_backends_fail(monkeypatch):
+    monkeypatch.setenv("MEMORYAI_LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    def fake_gemini_call(model, messages, tools=None, **kwargs):
+        raise RuntimeError("503 UNAVAILABLE")
+
+    def fake_ollama_call(model, messages, tools=None, **kwargs):
+        raise RuntimeError("Ollama not reachable")
+
+    monkeypatch.setattr("src.llm_client._gemini_call", fake_gemini_call)
+    monkeypatch.setattr("src.llm_client._ollama_call", fake_ollama_call)
+
+    result = call_llm("gemini-3.6-flash", [{"role": "user", "content": "What is 2+2?"}])
+
+    assert "temporarily unable to answer" in result["message"]["content"].lower()
+    assert "2+2" in result["message"]["content"]
+
+
 # ========================================
 # TEST SUITE MESSAGE
 # ========================================

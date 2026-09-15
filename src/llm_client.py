@@ -151,6 +151,26 @@ def _ollama_call(model: str, messages: List[Dict[str, str]], tools: Optional[Lis
     return ollama_chat(**payload)
 
 
+def _offline_fallback(model: str, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> Dict[str, Any]:
+    """Return a graceful user-facing response when every model backend is temporarily unavailable."""
+    user_request = ""
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            user_request = str(message.get("content") or "").strip()
+            break
+
+    summary = user_request[:180] if user_request else "your request"
+    return {
+        "message": {
+            "content": (
+                "I’m temporarily unable to answer right now because the AI provider is overloaded or unavailable. "
+                f"Please try again in a moment. Your request was: {summary}"
+            ),
+            "tool_calls": [],
+        }
+    }
+
+
 def call_llm(model: str, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> Dict[str, Any]:
     """Route to Gemini when configured, otherwise safely fall back to local Ollama."""
     provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
@@ -158,12 +178,27 @@ def call_llm(model: str, messages: List[Dict[str, str]], tools: Optional[List[Di
     cloud_available = bool(_get_gemini_api_key())
 
     if cloud_requested and not cloud_available:
-        return _ollama_call(model, messages, tools=tools, **kwargs)
+        try:
+            return _ollama_call(model, messages, tools=tools, **kwargs)
+        except Exception:
+            return _offline_fallback(model, messages, tools=tools, **kwargs)
 
     if provider in {"", "local", "ollama"} and not _is_cloud_mode():
-        return _ollama_call(model, messages, tools=tools, **kwargs)
+        try:
+            return _ollama_call(model, messages, tools=tools, **kwargs)
+        except Exception:
+            return _offline_fallback(model, messages, tools=tools, **kwargs)
 
     if cloud_available and (cloud_requested or _is_cloud_mode()):
-        return _gemini_call(model, messages, tools=tools, **kwargs)
+        try:
+            return _gemini_call(model, messages, tools=tools, **kwargs)
+        except Exception:
+            try:
+                return _ollama_call(model, messages, tools=tools, **kwargs)
+            except Exception:
+                return _offline_fallback(model, messages, tools=tools, **kwargs)
 
-    return _ollama_call(model, messages, tools=tools, **kwargs)
+    try:
+        return _ollama_call(model, messages, tools=tools, **kwargs)
+    except Exception:
+        return _offline_fallback(model, messages, tools=tools, **kwargs)
