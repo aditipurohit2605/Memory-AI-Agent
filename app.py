@@ -49,7 +49,7 @@ def configure_runtime() -> None:
     if ollama_host:
         os.environ["OLLAMA_HOST"] = str(ollama_host).rstrip("/")
 
-    if os.getenv("RENDER"):
+    if os.getenv("RENDER") and (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
         os.environ.setdefault("MEMORYAI_LLM_PROVIDER", "gemini")
         os.environ.setdefault("GEMINI_MODEL", "gemini-3.6-flash")
 

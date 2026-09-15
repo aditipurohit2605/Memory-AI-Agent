@@ -15,11 +15,11 @@ except Exception:  # pragma: no cover - handled gracefully at runtime
 
 
 def _is_cloud_mode() -> bool:
-    return bool(
-        os.getenv("RENDER")
-        or os.getenv("GOOGLE_API_KEY")
+    provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+    explicit_cloud = provider in {"gemini", "google", "google-genai", "cloud"}
+    return explicit_cloud or bool(
+        os.getenv("GOOGLE_API_KEY")
         or os.getenv("GEMINI_API_KEY")
-        or os.getenv("MEMORYAI_LLM_PROVIDER")
         or os.getenv("QDRANT_URL")
         or os.getenv("QDRANT_API_KEY")
     )
@@ -152,20 +152,18 @@ def _ollama_call(model: str, messages: List[Dict[str, str]], tools: Optional[Lis
 
 
 def call_llm(model: str, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> Dict[str, Any]:
-    """Route requests to the cloud provider when configured, otherwise use local Ollama."""
+    """Route to Gemini when configured, otherwise safely fall back to local Ollama."""
     provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+    cloud_requested = provider in {"gemini", "google", "google-genai", "cloud"}
+    cloud_available = bool(_get_gemini_api_key())
 
-    if os.getenv("RENDER") and not _get_gemini_api_key():
-        raise RuntimeError(
-            "Cloud AI is not configured. Add GEMINI_API_KEY or GOOGLE_API_KEY "
-            "in the Render environment variables, then redeploy."
-        )
+    if cloud_requested and not cloud_available:
+        return _ollama_call(model, messages, tools=tools, **kwargs)
 
     if provider in {"", "local", "ollama"} and not _is_cloud_mode():
         return _ollama_call(model, messages, tools=tools, **kwargs)
 
-    if provider in {"", "gemini", "google", "google-genai"} or _is_cloud_mode():
-        if _get_gemini_api_key():
-            return _gemini_call(model, messages, tools=tools, **kwargs)
+    if cloud_available and (cloud_requested or _is_cloud_mode()):
+        return _gemini_call(model, messages, tools=tools, **kwargs)
 
     return _ollama_call(model, messages, tools=tools, **kwargs)

@@ -32,7 +32,10 @@ CLOUD_MEMORY_FILE = Path(__file__).resolve().parent.parent / "data" / "cloud_mem
 
 
 def cloud_mode() -> bool:
-    return bool(os.getenv("RENDER"))
+    provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+    cloud_key = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    explicit_cloud = provider in {"gemini", "google", "google-genai", "cloud"}
+    return cloud_key or explicit_cloud
 
 
 def get_cloud_memories(user_id: str) -> list[dict]:
@@ -85,11 +88,14 @@ def clear_cloud_memories(user_id: str) -> None:
 
 
 def cloud_ai_error() -> str | None:
-    """Return a fast configuration error for cloud deployments."""
-    if os.getenv("RENDER") and not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+    """Return a friendly message only when cloud mode was explicitly requested without credentials."""
+    provider = (os.getenv("MEMORYAI_LLM_PROVIDER") or "").strip().lower()
+    if provider in {"gemini", "google", "google-genai", "cloud"} and not (
+        os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    ):
         return (
-            "Cloud AI is not configured on Render. Add GEMINI_API_KEY or "
-            "GOOGLE_API_KEY in the Render environment variables, then redeploy."
+            "Cloud AI is configured in the app settings but no Gemini API key is available. "
+            "Add GEMINI_API_KEY or GOOGLE_API_KEY to continue in cloud mode."
         )
     return None
 

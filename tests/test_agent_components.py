@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+from src.llm_client import call_llm
 from src.tools import calculator
 from src.conversation import ConversationMemory
 from src.feedback import FeedbackSystem
@@ -238,6 +239,26 @@ def test_build_memory_config_defaults_to_local_ollama(monkeypatch):
     assert config["llm"]["provider"] == "ollama"
     assert config["vector_store"]["provider"] == "qdrant"
     assert config["vector_store"]["config"]["path"] == "./qdrant_data"
+
+
+def test_call_llm_uses_local_ollama_when_render_has_no_cloud_key(monkeypatch):
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("MEMORYAI_LLM_PROVIDER", raising=False)
+
+    observed = {}
+
+    def fake_ollama_call(model, messages, tools=None, **kwargs):
+        observed["used"] = "ollama"
+        return {"message": {"content": "fallback response"}}
+
+    monkeypatch.setattr("src.llm_client._ollama_call", fake_ollama_call)
+
+    result = call_llm("llama3.2:3b", [{"role": "user", "content": "Hi"}])
+
+    assert observed["used"] == "ollama"
+    assert result["message"]["content"] == "fallback response"
 
 
 # ========================================
